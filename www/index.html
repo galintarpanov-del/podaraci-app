@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#c9457c">
+<title>Калкулатор за ръчни подаръци</title>
+<style>
+:root{--bg:#fdf5f8;--card:#fff;--ink:#2b2230;--mut:#7a6f80;--pri:#c9457c;--pri2:#fbe3ee;--ok:#237a58;--okbg:#dff3ea;--warn:#8f5a00;--warnbg:#fff0cc;--bad:#b83232;--badbg:#fbdcdc;--line:#eadde3;--nav:64px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.35}
+#top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;justify-content:space-between}
+#top h1{font-size:20px;margin:0}
+#save{font-size:12px;color:var(--mut)}
+#view{padding:4px 14px calc(var(--nav) + 90px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+#nav button{flex:1;border:0;background:none;height:var(--nav);font-size:11px;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:inherit}
+#nav button span{font-size:20px;line-height:1}
+#nav button.on{color:var(--pri);font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+.card.tap{cursor:pointer}
+.card.tap:active{background:#fbf3f6}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.kpi small{color:var(--mut);display:block;font-size:12px}
+.kpi b{font-size:20px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mut{color:var(--mut)}
+.sm{font-size:12px}
+h3{margin:16px 2px 8px;font-size:16px}
+h4{margin:14px 0 6px;font-size:14px}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700}
+.b-ok{background:var(--okbg);color:var(--ok)}
+.b-low{background:var(--warnbg);color:var(--warn)}
+.b-out,.b-bad{background:var(--badbg);color:var(--bad)}
+.b-none{background:#eee;color:#666}
+.chips{display:flex;gap:8px;margin:0 0 10px;overflow-x:auto}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 14px;font-size:14px;font-family:inherit;color:var(--ink);white-space:nowrap}
+.chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+input,select,textarea{width:100%;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:110px}
+label.f{display:block;margin:0 0 10px}
+label.f>span{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+.btn{border:0;background:var(--pri);color:#fff;font-size:16px;font-weight:700;padding:13px 16px;border-radius:12px;font-family:inherit;width:100%}
+.btn.ghost{background:var(--pri2);color:var(--pri)}
+.btn.danger{background:var(--badbg);color:var(--bad)}
+.btn.sm{width:auto;padding:8px 12px;font-size:14px}
+.actions{display:grid;gap:8px;margin-top:14px}
+.fab{position:fixed;right:16px;bottom:calc(var(--nav) + 16px + env(safe-area-inset-bottom));z-index:5;background:var(--pri);color:#fff;border:0;border-radius:99px;padding:14px 20px;font-size:16px;font-weight:700;box-shadow:0 6px 18px rgba(201,69,124,.4);font-family:inherit}
+.sheetbg{position:fixed;inset:0;background:rgba(30,20,35,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:720px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.sheet .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sheet .hd b{font-size:18px}
+.x{border:0;background:#fff;border-radius:99px;width:36px;height:36px;font-size:18px}
+.hidden{display:none!important}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl td,.tbl th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
+.tbl td:first-child,.tbl th:first-child{text-align:left}
+.tbl th{font-size:12px;color:var(--mut);font-weight:600}
+.tbl tr.tot td{font-weight:700;border-bottom:0}
+.line{display:grid;grid-template-columns:1fr 84px 34px;gap:6px;align-items:center;margin-bottom:6px}
+.line .x{width:34px;height:34px}
+.warn{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:8px 10px;font-size:13px;margin:8px 0}
+.note{background:var(--pri2);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px}
+.ladder{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+.ladder button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 4px;font-family:inherit;font-size:12px;color:var(--ink)}
+.ladder button b{display:block;font-size:15px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav) + 20px + env(safe-area-inset-bottom));background:#2b2230;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header id="top"><h1 id="title"></h1><div id="save"></div></header>
+<main id="view"></main>
+<nav id="nav"></nav>
+<div id="sheetbg" class="sheetbg hidden"><div class="sheet"><div class="hd"><b id="sheetTitle"></b><button class="x" data-act="close">✕</button></div><div id="sheetBody"></div></div></div>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ============ помощни ============ */
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => { const x = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isFinite(x) ? x : 0; };
+const blank = v => v === "" || v == null;
+const eur = v => { const s = (Math.round((v || 0) * 100) / 100).toFixed(2).replace(".", ","); return s.replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " €"; };
+const eur4 = v => (Math.round((v || 0) * 10000) / 10000).toFixed(4).replace(".", ",") + " €";
+const pct = v => (v == null ? "–" : Math.round(v * 100) + "%");
+const qf = v => String(Math.round((v || 0) * 100) / 100).replace(".", ",");
+const pad = x => String(x).padStart(2, "0");
+const dstr = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const today = () => dstr(new Date());
+const daysAgo = k => { const d = new Date(); d.setDate(d.getDate() - k); return dstr(d); };
+const fdate = d => d ? d.split("-").reverse().join(".") : "";
+const KEY = "ruchni-podaraci-v1";
+
+/* ============ примерни данни ============ */
+function seed() {
+  const mats = [
+    ["Ратанова кошница","Опаковка","бр.",2],["Целофан за кошници","Опаковка","бр.",5],
+    ["Панделка сатен розова","Опаковка","м",10],["Хартиена вата розова","Опаковка","г",100],
+    ["Кашу ядки","Храна","г",500],["Шоколад Lindor","Храна","бр.",6],["Сладко (малък буркан)","Храна","бр.",3],
+    ["Креп хартия розова","Хартия","лист",3],["Креп хартия лилава","Хартия","лист",3],["Креп хартия бяла","Хартия","лист",3],
+    ["Жица за стъбла","Консумативи","м",5],["Тичинки за кали","Консумативи","бр.",20],
+    ["Опаковъчна хартия мента","Опаковка","лист",5],["Спатифилум (стайно растение)","Растения","бр.",1],
+    ["Термо лепило (щифт)","Консумативи","бр.",5]];
+  const M = {};
+  const materials = mats.map((m, i) => { const id = "m" + i; M[m[0]] = id; return {id, name: m[0], cat: m[1], unit: m[2], min: m[3]}; });
+  const buys = [
+    [8,"Ратанова кошница",6,27,"Пазар"],[8,"Целофан за кошници",20,6,"Пазар"],[8,"Панделка сатен розова",50,4,"Пазар"],
+    [8,"Хартиена вата розова",500,4,"Пазар"],[7,"Кашу ядки",1000,16,"Магазин"],[7,"Шоколад Lindor",12,9.6,"Магазин"],
+    [7,"Сладко (малък буркан)",6,12,"Магазин"],[6,"Креп хартия розова",10,12,"Книжарница"],[6,"Креп хартия лилава",10,12,"Книжарница"],
+    [6,"Креп хартия бяла",10,12,"Книжарница"],[6,"Жица за стъбла",20,4,"Книжарница"],[6,"Тичинки за кали",50,5,"Книжарница"],
+    [5,"Опаковъчна хартия мента",20,14,"Онлайн"],[5,"Спатифилум (стайно растение)",4,22,"Цветарница"],[5,"Термо лепило (щифт)",20,4,"Онлайн"]];
+  const purchases = buys.map(b => ({id: uid(), date: daysAgo(b[0]), matId: M[b[1]], qty: b[2], total: b[3], supplier: b[4]}));
+  const P1 = {id: "p1", name: 'Кошница "Сладък ден"', minutes: 45, price: 45};
+  const P2 = {id: "p2", name: "Букет хартиени кали (9 цвята)", minutes: 90, price: 38};
+  const P3 = {id: "p3", name: "Спатифилум в подаръчна опаковка", minutes: 15, price: 19};
+  const rl = [
+    ["p1","Ратанова кошница",1],["p1","Целофан за кошници",1],["p1","Панделка сатен розова",1.5],["p1","Хартиена вата розова",30],
+    ["p1","Кашу ядки",250],["p1","Шоколад Lindor",4],["p1","Сладко (малък буркан)",1],
+    ["p2","Креп хартия розова",0.6],["p2","Креп хартия лилава",0.45],["p2","Креп хартия бяла",0.45],["p2","Жица за стъбла",3.6],
+    ["p2","Тичинки за кали",9],["p2","Опаковъчна хартия мента",1.5],["p2","Панделка сатен розова",1],["p2","Хартиена вата розова",20],
+    ["p2","Термо лепило (щифт)",0.5],["p3","Спатифилум (стайно растение)",1],["p3","Опаковъчна хартия мента",1],["p3","Панделка сатен розова",1]];
+  return {
+    v: 1, demo: true,
+    settings: {rate: 7, overhead: 0.05, minMk: 1, targetMk: 1.25, highMk: 1.5, round: 0.5, priceMode: "last", reorderMult: 2},
+    materials, purchases,
+    outs: [{id: uid(), date: daysAgo(2), matId: M["Целофан за кошници"], qty: 2, reason: "Скъсан при опаковане"}],
+    products: [P1, P2, P3],
+    recipes: rl.map(r => ({id: uid(), prodId: r[0], matId: M[r[1]], qty: r[2]})),
+    makes: [
+      {id: uid(), date: daysAgo(4), prodId: "p1", qty: 2, realMin: "", price: ""},
+      {id: uid(), date: daysAgo(3), prodId: "p2", qty: 1, realMin: 100, price: 38},
+      {id: uid(), date: daysAgo(2), prodId: "p3", qty: 3, realMin: "", price: ""}]
+  };
+}
+const emptyState = () => ({v: 1, demo: false, settings: seed().settings, materials: [], purchases: [], outs: [], products: [], recipes: [], makes: []});
+
+/* ============ изчисления ============ */
+function prodCalc(mats, st, p, lines) {
+  const ls = lines.map(r => { const o = mats[r.matId]; const price = o ? o.price : 0; return {r, o, price, cost: num(r.qty) * price}; });
+  const materials = ls.reduce((a, l) => a + l.cost, 0);
+  const labor = num(p.minutes) / 60 * st.rate;
+  const overhead = (materials + labor) * st.overhead;
+  const cost = materials + labor + overhead;
+  const step = st.round > 0 ? st.round : 0;
+  const raw = cost * (1 + st.targetMk);
+  const rec = step ? Math.ceil(raw / step - 1e-9) * step : raw;
+  const price = blank(p.price) ? null : num(p.price);
+  const profit = price == null ? null : price - cost;
+  const markup = price == null || cost === 0 ? null : profit / cost;
+  const margin = price == null || price === 0 ? null : profit / price;
+  const grade = markup == null ? "none" : markup < st.minMk - 1e-9 ? "bad" : markup >= st.highMk - 1e-9 ? "great" : "good";
+  return {lines: ls, materials, labor, overhead, cost, minPrice: cost * (1 + st.minMk), rec, highPrice: cost * (1 + st.highMk), price, profit, markup, margin, grade};
+}
+function calc(S) {
+  const st = S.settings, mats = {};
+  S.materials.forEach(m => mats[m.id] = {m, bought: 0, spent: 0, last: 0, usedR: 0, usedM: 0});
+  [...S.purchases].sort((a, b) => (a.date || "").localeCompare(b.date || "")).forEach(p => {
+    const o = mats[p.matId]; if (!o || !num(p.qty)) return;
+    o.bought += num(p.qty); o.spent += num(p.total); o.last = num(p.total) / num(p.qty);
+  });
+  S.outs.forEach(x => { const o = mats[x.matId]; if (o) o.usedM += num(x.qty); });
+  const rec = {};
+  S.recipes.forEach(r => (rec[r.prodId] = rec[r.prodId] || []).push(r));
+  S.makes.forEach(mk => (rec[mk.prodId] || []).forEach(r => { const o = mats[r.matId]; if (o) o.usedR += num(mk.qty) * num(r.qty); }));
+  Object.values(mats).forEach(o => {
+    o.avg = o.bought ? o.spent / o.bought : 0;
+    o.price = st.priceMode === "avg" ? o.avg : (o.bought ? o.last : 0);
+    o.stock = o.bought - o.usedR - o.usedM;
+    const min = num(o.m.min);
+    o.status = o.stock <= 0 ? "out" : o.stock <= min ? "low" : "ok";
+    o.reorder = o.stock <= min ? Math.max(0, min * st.reorderMult - o.stock) : 0;
+    o.value = Math.max(0, o.stock) * o.avg;
+    o.orderCost = o.reorder * o.price;
+  });
+  const prods = {};
+  S.products.forEach(p => prods[p.id] = Object.assign({p}, prodCalc(mats, st, p, rec[p.id] || [])));
+  const makes = S.makes.map(mk => {
+    const pc = prods[mk.prodId], q = num(mk.qty);
+    const materials = pc ? q * pc.materials : 0;
+    const mins = blank(mk.realMin) ? q * num(pc ? pc.p.minutes : 0) : num(mk.realMin);
+    const labor = mins / 60 * st.rate;
+    const overhead = (materials + labor) * st.overhead;
+    const cost = materials + labor + overhead;
+    const unit = blank(mk.price) ? num(pc ? pc.p.price : 0) : num(mk.price);
+    const revenue = q * unit, profit = revenue - cost;
+    return {mk, pc, q, materials, labor, overhead, cost, revenue, profit, markup: cost ? profit / cost : null};
+  });
+  return {mats, prods, makes, rec};
+}
+
+/* ============ състояние и запис ============ */
+let S, C;
+const ui = {tab: "dash", period: "month", sfilter: "all", q: ""};
+try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : null; } catch (e) { S = null; }
+if (!S || !S.materials) S = seed();
+let dirty = false, timer = null, store = null;
+function setSaveText(t) { const el = $("#save"); if (el) el.textContent = t; }
+function commit() {
+  dirty = true; render(); setSaveText("Записвам…");
+  clearTimeout(timer); timer = setTimeout(persist, 500);
+}
+async function persist() {
+  const json = JSON.stringify(S);
+  let local = false, remote = false;
+  try { localStorage.setItem(KEY, json); local = true; } catch (e) {}
+  if (store) { try { await store.set({json, updated: new Date().toISOString()}); remote = true; } catch (e) {} }
+  setSaveText(local ? "Запазено ✓" : "Не е запазено");
+}
+function snapData(snap) {
+  if (!snap) return null;
+  const ex = typeof snap.exists === "function" ? snap.exists() : snap.exists;
+  if (ex === false) return null;
+  return typeof snap.data === "function" ? snap.data() : snap;
+}
+async function initStore() {
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
+  setSaveText("Данните са на този телефон");
+}
+
+/* ============ интерфейс: общи ============ */
+const TABS = [["dash","Табло","📊"],["prod","Продукти","🎁"],["make","Изработка","🛠️"],["stock","Склад","📦"],["more","Още","☰"]];
+const TITLES = {dash: "Табло", prod: "Продукти", make: "Изработка и продажби", stock: "Склад", more: "Още", buy: "Покупки", out: "Ръчно изписване", set: "Настройки"};
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 1800); }
+function openSheet(title, html, wire) { $("#sheetTitle").textContent = title; $("#sheetBody").innerHTML = html; $("#sheetbg").classList.remove("hidden"); if (wire) wire($("#sheetBody")); }
+function closeSheet() { $("#sheetbg").classList.add("hidden"); $("#sheetBody").innerHTML = ""; }
+function confirmBox(msg, yes) {
+  openSheet("Потвърди", `<p>${esc(msg)}</p><div class="actions"><button class="btn danger" id="cYes">Да, изтрий</button><button class="btn ghost" data-act="close">Отказ</button></div>`,
+    el => el.querySelector("#cYes").onclick = () => { closeSheet(); yes(); });
+}
+const fld = (label, id, val, extra) => `<label class="f"><span>${label}</span><input id="${id}" value="${esc(val)}" ${extra || ""}></label>`;
+const dec = (label, id, val, ph) => fld(label, id, val, `inputmode="decimal" autocomplete="off" placeholder="${esc(ph || "")}"`);
+const matOpts = (sel) => `<option value="">— избери материал —</option>` + [...S.materials].sort((a, b) => a.name.localeCompare(b.name, "bg")).map(m => `<option value="${m.id}" ${m.id === sel ? "selected" : ""}>${esc(m.name)}</option>`).join("");
+const prodOpts = (sel) => `<option value="">— избери продукт —</option>` + S.products.map(p => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${esc(p.name)}</option>`).join("");
+const mname = id => { const m = S.materials.find(x => x.id === id); return m ? m.name : "(изтрит материал)"; };
+const munit = id => { const m = S.materials.find(x => x.id === id); return m ? m.unit : ""; };
+const pname = id => { const p = S.products.find(x => x.id === id); return p ? p.name : "(изтрит продукт)"; };
+const statusBadge = s => s === "out" ? `<span class="badge b-out">Свършил</span>` : s === "low" ? `<span class="badge b-low">Поръчай</span>` : `<span class="badge b-ok">OK</span>`;
+const gradeBadge = (g, mk) => g === "none" ? `<span class="badge b-none">без цена</span>` : `<span class="badge ${g === "bad" ? "b-bad" : g === "great" ? "b-ok" : "b-low"}">${pct(mk)} надценка</span>`;
+
+/* ============ изгледи ============ */
+function vDash() {
+  const ym = today().slice(0, 7);
+  const ms = C.makes.filter(m => ui.period === "all" || (m.mk.date || "").slice(0, 7) === ym);
+  const rev = ms.reduce((a, m) => a + m.revenue, 0), cost = ms.reduce((a, m) => a + m.cost, 0), cnt = ms.reduce((a, m) => a + m.q, 0);
+  const mats = Object.values(C.mats);
+  const low = mats.filter(o => o.status !== "stock-none" && o.status !== "ok").sort((a, b) => (a.status === "out" ? 0 : 1) - (b.status === "out" ? 0 : 1));
+  const orderTotal = low.reduce((a, o) => a + o.orderCost, 0);
+  const stockVal = mats.reduce((a, o) => a + o.value, 0);
+  const bad = Object.values(C.prods).filter(p => p.grade === "bad");
+  const byProd = S.products.map(p => { const r = ms.filter(m => m.mk.prodId === p.id); return {p, q: r.reduce((a, m) => a + m.q, 0), rev: r.reduce((a, m) => a + m.revenue, 0), pr: r.reduce((a, m) => a + m.profit, 0)}; });
+  return `${S.demo ? `<div class="note"><b>Примерни данни.</b> Разгледай, после в Още → Настройки натисни „Изчисти примерните данни“ и въведи своите.</div>` : ""}
+  <div class="chips"><button class="chip ${ui.period === "month" ? "on" : ""}" data-act="period" data-v="month">Този месец</button><button class="chip ${ui.period === "all" ? "on" : ""}" data-act="period" data-v="all">Всичко</button></div>
+  <div class="kpis">
+    <div class="kpi"><small>Приход</small><b>${eur(rev)}</b></div>
+    <div class="kpi"><small>Печалба</small><b>${eur(rev - cost)}</b></div>
+    <div class="kpi"><small>Средна надценка</small><b>${cost ? pct((rev - cost) / cost) : "–"}</b></div>
+    <div class="kpi"><small>Изработени</small><b>${qf(cnt)} бр.</b></div>
+  </div>
+  <div class="row" style="margin-bottom:10px"><button class="btn" data-act="newMake" style="margin-right:6px">+ Изработено</button><button class="btn ghost" data-act="newBuy">+ Покупка</button></div>
+  <h3>На свършване (${low.length})</h3>
+  ${low.length ? low.slice(0, 8).map(o => `<div class="card tap" data-act="editMat" data-id="${o.m.id}"><div class="row"><b>${esc(o.m.name)}</b>${statusBadge(o.status)}</div>
+     <div class="sm mut">Налично ${qf(o.stock)} ${esc(o.m.unit)} · минимум ${qf(num(o.m.min))} · поръчай ≈ ${qf(o.reorder)} ${esc(o.m.unit)} (${eur(o.orderCost)})</div></div>`).join("") + (low.length > 8 ? `<div class="sm mut">И още ${low.length - 8} в Склад.</div>` : "") + `<div class="sm mut" style="margin:2px 2px 8px">Приблизителна стойност на поръчката: <b>${eur(orderTotal)}</b></div>`
+     : `<div class="card mut">Всички материали са над минимума.</div>`}
+  <h3>Склад</h3><div class="card row"><span>Стойност на наличностите</span><b>${eur(stockVal)}</b></div>
+  ${bad.length ? `<h3>Под минималната надценка</h3>` + bad.map(p => `<div class="card tap" data-act="editProd" data-id="${p.p.id}"><div class="row"><b>${esc(p.p.name)}</b>${gradeBadge(p.grade, p.markup)}</div><div class="sm mut">Себестойност ${eur(p.cost)} · реална цена ${eur(p.price)} · минимум ${eur(p.minPrice)}</div></div>`).join("") : ""}
+  <h3>По продукти</h3>
+  <div class="card">${byProd.length ? `<table class="tbl"><tr><th>Продукт</th><th>Бр.</th><th>Приход</th><th>Печалба</th></tr>${byProd.map(r => `<tr><td>${esc(r.p.name)}</td><td>${qf(r.q)}</td><td>${eur(r.rev)}</td><td>${eur(r.pr)}</td></tr>`).join("")}</table>` : `<span class="mut">Още няма продукти.</span>`}</div>`;
+}
+
+function vProd() {
+  const list = Object.values(C.prods);
+  return `<div class="sm mut" style="margin:0 2px 10px">Докосни продукт за рецепта, време и цена.</div>` +
+    (list.length ? list.map(p => `<div class="card tap" data-act="editProd" data-id="${p.p.id}">
+      <div class="row"><b>${esc(p.p.name)}</b>${gradeBadge(p.grade, p.markup)}</div>
+      <div class="row sm" style="margin-top:6px"><span class="mut">Себестойност</span><b>${eur(p.cost)}</b></div>
+      <div class="row sm"><span class="mut">Препоръчана цена</span><b>${eur(p.rec)}</b></div>
+      <div class="row sm"><span class="mut">Твоя цена</span><b>${p.price == null ? "–" : eur(p.price)}</b></div>
+      ${p.profit != null ? `<div class="row sm"><span class="mut">Печалба на бр.</span><b>${eur(p.profit)}</b></div>` : ""}</div>`).join("") : `<div class="card mut">Още няма продукти. Добави първия.</div>`) +
+    `<button class="fab" data-act="newProd">+ Продукт</button>`;
+}
+
+function vStock() {
+  return `<input id="sq" placeholder="Търси материал…" value="${esc(ui.q)}" style="margin-bottom:10px">
+  <div class="chips">${[["all","Всички"],["low","Поръчай"],["out","Свършили"]].map(c => `<button class="chip ${ui.sfilter === c[0] ? "on" : ""}" data-act="sfilter" data-v="${c[0]}">${c[1]}</button>`).join("")}</div>
+  <div id="stockList"></div><button class="fab" data-act="newMat">+ Материал</button>`;
+}
+function drawStock() {
+  const q = ui.q.trim().toLowerCase();
+  let list = Object.values(C.mats).filter(o => (ui.sfilter === "all" || (ui.sfilter === "low" ? o.status === "low" : o.status === "out")) && (!q || (o.m.name + " " + o.m.cat).toLowerCase().includes(q)));
+  list.sort((a, b) => a.m.name.localeCompare(b.m.name, "bg"));
+  $("#stockList").innerHTML = list.length ? list.map(o => `<div class="card tap" data-act="editMat" data-id="${o.m.id}">
+    <div class="row"><b>${esc(o.m.name)}</b>${statusBadge(o.status)}</div>
+    <div class="row sm" style="margin-top:4px"><span><b style="font-size:17px">${qf(o.stock)}</b> ${esc(o.m.unit)} <span class="mut">(минимум ${qf(num(o.m.min))})</span></span><span class="mut">${esc(o.m.cat || "")}</span></div>
+    <div class="sm mut">Цена: ${eur4(o.price)} / ${esc(o.m.unit)} · стойност ${eur(o.value)}</div></div>`).join("") : `<div class="card mut">Няма материали.</div>`;
+}
+
+function vMake() {
+  const list = [...C.makes].sort((a, b) => (b.mk.date || "").localeCompare(a.mk.date || ""));
+  return `<div class="sm mut" style="margin:0 2px 10px">Всеки запис изписва материалите по рецептата и смята печалбата.</div>` +
+    (list.length ? list.map(m => `<div class="card tap" data-act="editMake" data-id="${m.mk.id}">
+      <div class="row"><b>${qf(m.q)} × ${esc(pname(m.mk.prodId))}</b><span class="sm mut">${fdate(m.mk.date)}</span></div>
+      <div class="row sm" style="margin-top:4px"><span class="mut">Приход ${eur(m.revenue)} · разход ${eur(m.cost)}</span><b>${eur(m.profit)}</b></div>
+      <div class="sm">${gradeBadge(m.markup == null ? "none" : m.markup < S.settings.minMk - 1e-9 ? "bad" : m.markup >= S.settings.highMk - 1e-9 ? "great" : "good", m.markup)}</div></div>`).join("") : `<div class="card mut">Още няма записи.</div>`) +
+    `<button class="fab" data-act="newMake">+ Изработено</button>`;
+}
+
+function vBuy() {
+  const list = [...S.purchases].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  return `<div class="row" style="margin-bottom:8px"><button class="btn sm ghost" data-act="tab" data-v="more">← Назад</button></div>` +
+    (list.length ? list.slice(0, 150).map(p => `<div class="card tap" data-act="editBuy" data-id="${p.id}">
+      <div class="row"><b>${esc(mname(p.matId))}</b><span class="sm mut">${fdate(p.date)}</span></div>
+      <div class="row sm"><span>${qf(num(p.qty))} ${esc(munit(p.matId))} · ${eur(num(p.total))}</span><span class="mut">${num(p.qty) ? eur4(num(p.total) / num(p.qty)) + " / ед." : ""}</span></div>
+      ${p.supplier ? `<div class="sm mut">${esc(p.supplier)}</div>` : ""}</div>`).join("") : `<div class="card mut">Още няма покупки.</div>`) +
+    `<button class="fab" data-act="newBuy">+ Покупка</button>`;
+}
+function vOut() {
+  const list = [...S.outs].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  return `<div class="row" style="margin-bottom:8px"><button class="btn sm ghost" data-act="tab" data-v="more">← Назад</button></div>
+  <div class="sm mut" style="margin:0 2px 10px">За материали извън рецептите: брак, подарък, проба, загуба.</div>` +
+    (list.length ? list.map(p => `<div class="card tap" data-act="editOut" data-id="${p.id}">
+      <div class="row"><b>${esc(mname(p.matId))}</b><span class="sm mut">${fdate(p.date)}</span></div>
+      <div class="sm">${qf(num(p.qty))} ${esc(munit(p.matId))}${p.reason ? " · " + esc(p.reason) : ""}</div></div>`).join("") : `<div class="card mut">Няма ръчни изписвания.</div>`) +
+    `<button class="fab" data-act="newOut">+ Изписване</button>`;
+}
+function vMore() {
+  const b = (act, t, s) => `<div class="card tap" data-act="${act}"><b>${t}</b><div class="sm mut">${s}</div></div>`;
+  return b("goBuy", "Покупки", "Нови доставки на материали: количество и цена") + b("goOut", "Ръчно изписване", "Брак, подарък, проба, загуба") + b("goSet", "Настройки и архив", "Ставка за труд, надценки, резервно копие");
+}
+function vSet() {
+  const st = S.settings;
+  return `<div class="row" style="margin-bottom:8px"><button class="btn sm ghost" data-act="tab" data-v="more">← Назад</button></div>
+  <div class="card">
+    ${dec("Почасова ставка за труд (€/час)", "s_rate", st.rate)}
+    ${dec("Режийни (% от материали + труд)", "s_over", Math.round(st.overhead * 1000) / 10)}
+    <div class="row2">${dec("Минимална надценка (%)", "s_min", Math.round(st.minMk * 100))}${dec("Целева надценка (%)", "s_tar", Math.round(st.targetMk * 100))}</div>
+    <div class="row2">${dec("Висока надценка (%)", "s_high", Math.round(st.highMk * 100))}${dec("Закръгляне на цената (€)", "s_round", st.round)}</div>
+    <label class="f"><span>Цена на материалите за калкулация</span><select id="s_mode"><option value="last" ${st.priceMode === "last" ? "selected" : ""}>Последна покупка</option><option value="avg" ${st.priceMode === "avg" ? "selected" : ""}>Средна цена</option></select></label>
+    ${dec("Поръчвай до ниво (× минималното количество)", "s_mult", st.reorderMult)}
+    <button class="btn" id="s_save">Запази настройките</button>
+    <div class="sm mut" style="margin-top:8px">Надценка = (цена − себестойност) / себестойност. 100% значи цена два пъти себестойността.</div>
+  </div>
+  <h3>Резервно копие</h3>
+  <div class="card"><div class="actions" style="margin-top:0">
+    <button class="btn ghost" id="b_json">Свали архив (JSON)</button>
+    <button class="btn ghost" id="b_copy">Копирай архива</button>
+    <button class="btn ghost" id="b_csv1">Свали склада (CSV)</button>
+    <button class="btn ghost" id="b_csv2">Свали изработката (CSV)</button>
+    <button class="btn ghost" id="b_imp">Върни от архив</button></div></div>
+  <h3>Данни</h3>
+  <div class="card"><div class="actions" style="margin-top:0">
+    ${S.demo ? `<button class="btn danger" id="b_clear">Изчисти примерните данни</button>` : `<button class="btn ghost" id="b_seed">Зареди примерни данни</button>`}</div></div>`;
+}
+
+/* ============ форми ============ */
+function matSummary(o) { return `<table class="tbl"><tr><td>Закупено</td><td>${qf(o.bought)} ${esc(o.m.unit)}</td></tr><tr><td>Изписано (рецепти + ръчно)</td><td>${qf(o.usedR + o.usedM)} ${esc(o.m.unit)}</td></tr><tr><td>Наличност</td><td><b>${qf(o.stock)} ${esc(o.m.unit)}</b></td></tr><tr><td>Средна цена</td><td>${eur4(o.avg)}</td></tr><tr><td>Последна цена</td><td>${eur4(o.last)}</td></tr></table>`; }
+function sheetMat(id) {
+  const old = S.materials.find(m => m.id === id), o = old && C.mats[id];
+  const cats = [...new Set(S.materials.map(m => m.cat).filter(Boolean))];
+  openSheet(old ? "Материал" : "Нов материал", `
+    ${fld("Име", "mName", old ? old.name : "", 'placeholder="напр. Креп хартия розова"')}
+    <div class="row2">${fld("Категория", "mCat", old ? old.cat : "", 'list="cats"')}${fld("Мерна единица", "mUnit", old ? old.unit : "бр.", 'list="units"')}</div>
+    <datalist id="cats">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="units"><option>бр.</option><option>г</option><option>кг</option><option>м</option><option>лист</option><option>мл</option><option>л</option></datalist>
+    ${dec("Минимално количество (сигнал за поръчка)", "mMin", old ? old.min : "", "0")}
+    ${o ? matSummary(o) : ""}
+    <div class="actions"><button class="btn" id="mSave">Запази</button>
+    ${old ? `<button class="btn ghost" id="mBuy">+ Купих</button><button class="btn ghost" id="mOut">Изпиши ръчно</button><button class="btn danger" id="mDel">Изтрий</button>` : ""}</div>`,
+    el => {
+      el.querySelector("#mSave").onclick = () => {
+        const name = el.querySelector("#mName").value.trim();
+        if (!name) return toast("Въведи име");
+        if (S.materials.some(m => m.id !== id && m.name.toLowerCase() === name.toLowerCase())) return toast("Такъв материал вече има");
+        const rec = {id: old ? old.id : uid(), name, cat: el.querySelector("#mCat").value.trim(), unit: el.querySelector("#mUnit").value.trim() || "бр.", min: num(el.querySelector("#mMin").value)};
+        if (old) S.materials[S.materials.indexOf(old)] = rec; else S.materials.push(rec);
+        closeSheet(); commit(); toast("Запазено");
+      };
+      if (old) {
+        el.querySelector("#mBuy").onclick = () => sheetBuy(null, id);
+        el.querySelector("#mOut").onclick = () => sheetOut(null, id);
+        el.querySelector("#mDel").onclick = () => {
+          const n1 = S.purchases.filter(p => p.matId === id).length + S.recipes.filter(r => r.matId === id).length + S.outs.filter(p => p.matId === id).length;
+          confirmBox(n1 ? `„${old.name}“ се ползва в ${n1} записа (покупки, рецепти, изписвания). Те също ще се изтрият.` : `Да изтрия „${old.name}“?`, () => {
+            S.materials = S.materials.filter(m => m.id !== id); S.purchases = S.purchases.filter(p => p.matId !== id);
+            S.recipes = S.recipes.filter(r => r.matId !== id); S.outs = S.outs.filter(p => p.matId !== id); commit(); toast("Изтрито");
+          });
+        };
+      }
+    });
+}
+
+function sheetBuy(id, matId) {
+  const old = S.purchases.find(p => p.id === id);
+  const d = old ? {...old} : {date: today(), matId: matId || "", qty: "", total: "", supplier: ""};
+  if (!S.materials.length) return toast("Първо добави материал в Склад");
+  openSheet(old ? "Покупка" : "Нова покупка", `
+    ${fld("Дата", "bDate", d.date, 'type="date"')}
+    <label class="f"><span>Материал</span><select id="bMat">${matOpts(d.matId)}</select></label>
+    <div class="row2">${dec("Количество", "bQty", d.qty)}${dec("Обща цена (€)", "bTot", d.total)}</div>
+    ${fld("Доставчик", "bSup", d.supplier)}
+    <div class="note" id="bPrev"></div>
+    <div class="actions"><button class="btn" id="bSave">Запази</button>${old ? `<button class="btn danger" id="bDel">Изтрий</button>` : ""}</div>`,
+    el => {
+      const prev = () => { const q = num(el.querySelector("#bQty").value), t = num(el.querySelector("#bTot").value), u = munit(el.querySelector("#bMat").value);
+        el.querySelector("#bPrev").innerHTML = q ? `Цена за единица: <b>${eur4(t / q)}</b> / ${esc(u)}` : "Въведи количество и обща цена."; };
+      el.querySelectorAll("input,select").forEach(i => i.oninput = prev); prev();
+      el.querySelector("#bSave").onclick = () => {
+        const rec = {id: old ? old.id : uid(), date: el.querySelector("#bDate").value || today(), matId: el.querySelector("#bMat").value, qty: num(el.querySelector("#bQty").value), total: num(el.querySelector("#bTot").value), supplier: el.querySelector("#bSup").value.trim()};
+        if (!rec.matId) return toast("Избери материал"); if (!rec.qty) return toast("Въведи количество");
+        if (old) S.purchases[S.purchases.indexOf(old)] = rec; else S.purchases.push(rec);
+        closeSheet(); commit(); toast("Запазено");
+      };
+      if (old) el.querySelector("#bDel").onclick = () => confirmBox("Да изтрия ли тази покупка?", () => { S.purchases = S.purchases.filter(p => p.id !== id); commit(); });
+    });
+}
+
+function sheetOut(id, matId) {
+  const old = S.outs.find(p => p.id === id);
+  const d = old ? {...old} : {date: today(), matId: matId || "", qty: "", reason: ""};
+  if (!S.materials.length) return toast("Първо добави материал в Склад");
+  openSheet(old ? "Изписване" : "Ново изписване", `
+    ${fld("Дата", "oDate", d.date, 'type="date"')}
+    <label class="f"><span>Материал</span><select id="oMat">${matOpts(d.matId)}</select></label>
+    ${dec("Количество", "oQty", d.qty)}
+    ${fld("Причина", "oWhy", d.reason, 'placeholder="брак, подарък, проба…"')}
+    <div class="actions"><button class="btn" id="oSave">Запази</button>${old ? `<button class="btn danger" id="oDel">Изтрий</button>` : ""}</div>`,
+    el => {
+      el.querySelector("#oSave").onclick = () => {
+        const rec = {id: old ? old.id : uid(), date: el.querySelector("#oDate").value || today(), matId: el.querySelector("#oMat").value, qty: num(el.querySelector("#oQty").value), reason: el.querySelector("#oWhy").value.trim()};
+        if (!rec.matId) return toast("Избери материал"); if (!rec.qty) return toast("Въведи количество");
+        if (old) S.outs[S.outs.indexOf(old)] = rec; else S.outs.push(rec);
+        closeSheet(); commit(); toast("Запазено");
+      };
+      if (old) el.querySelector("#oDel").onclick = () => confirmBox("Да изтрия ли това изписване?", () => { S.outs = S.outs.filter(p => p.id !== id); commit(); });
+    });
+}
+
+function calcTable(c) {
+  const row = (a, b, cls) => `<tr class="${cls || ""}"><td>${a}</td><td>${b}</td></tr>`;
+  return `<table class="tbl">${row("Материали", eur(c.materials))}${row("Труд", eur(c.labor))}${row("Режийни", eur(c.overhead))}${row("Себестойност", eur(c.cost), "tot")}</table>`;
+}
+function sheetProd(id) {
+  const old = S.products.find(p => p.id === id);
+  const d = old ? {...old, lines: S.recipes.filter(r => r.prodId === id).map(r => ({...r}))} : {id: uid(), name: "", minutes: "", price: "", lines: []};
+  openSheet(old ? "Продукт" : "Нов продукт", `
+    ${fld("Име на продукта", "pName", d.name, 'placeholder="напр. Букет от кали"')}
+    <div class="row2">${dec("Време за изработка (мин)", "pMin", d.minutes)}${dec("Твоя продажна цена (€)", "pPrice", d.price)}</div>
+    <h4>Материали за 1 брой</h4><div id="pLines"></div>
+    <button class="btn ghost" id="pAdd">+ Добави материал</button>
+    <div id="pCalc" style="margin-top:12px"></div>
+    <div class="actions"><button class="btn" id="pSave">Запази</button>${old ? `<button class="btn ghost" id="pDup">Дублирай</button><button class="btn danger" id="pDel">Изтрий</button>` : ""}</div>`,
+    el => {
+      const linesEl = el.querySelector("#pLines");
+      const refresh = () => {
+        d.name = el.querySelector("#pName").value; d.minutes = el.querySelector("#pMin").value; d.price = el.querySelector("#pPrice").value;
+        const c = prodCalc(C.mats, S.settings, d, d.lines);
+        linesEl.querySelectorAll("[data-cost]").forEach(s => { const l = c.lines[+s.dataset.cost]; if (l) s.textContent = eur(l.cost); });
+        el.querySelector("#pCalc").innerHTML = calcTable(c) + `<h4>Цена</h4><div class="ladder">
+          <button data-set="${c.minPrice}">Минимална<b>${eur(c.minPrice)}</b></button><button data-set="${c.rec}">Препоръчана<b>${eur(c.rec)}</b></button><button data-set="${c.highPrice}">Висока<b>${eur(c.highPrice)}</b></button></div>
+          <div class="sm mut" style="margin-top:4px">Докосни цена, за да я зададеш.</div>
+          ${c.price == null ? "" : `<div class="card" style="margin-top:10px"><div class="row"><span>Печалба на бр.</span><b>${eur(c.profit)}</b></div><div class="row"><span>Надценка</span>${gradeBadge(c.grade, c.markup)}</div><div class="row"><span>Марж от цената</span><b>${pct(c.margin)}</b></div></div>`}`;
+        el.querySelectorAll("[data-set]").forEach(b => b.onclick = () => { const v = Math.round(num(b.dataset.set) * 100) / 100; el.querySelector("#pPrice").value = String(v).replace(".", ","); refresh(); });
+      };
+      const drawLines = () => {
+        linesEl.innerHTML = d.lines.map((l, i) => `<div class="line"><select data-m="${i}">${matOpts(l.matId)}</select><input data-q="${i}" inputmode="decimal" value="${esc(l.qty)}" placeholder="кол."><button class="x" data-r="${i}">✕</button>
+          <div class="sm mut" style="grid-column:1/4;margin-top:-2px"><span data-unit="${i}">${esc(munit(l.matId))}</span> · <span data-cost="${i}"></span></div></div>`).join("");
+        linesEl.querySelectorAll("[data-m]").forEach(s => s.onchange = () => { const i = +s.dataset.m; d.lines[i].matId = s.value; linesEl.querySelector(`[data-unit="${i}"]`).textContent = munit(s.value); refresh(); });
+        linesEl.querySelectorAll("[data-q]").forEach(s => s.oninput = () => { d.lines[+s.dataset.q].qty = s.value; refresh(); });
+        linesEl.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { d.lines.splice(+b.dataset.r, 1); drawLines(); refresh(); });
+        refresh();
+      };
+      ["#pName", "#pMin", "#pPrice"].forEach(s => el.querySelector(s).oninput = refresh);
+      el.querySelector("#pAdd").onclick = () => { if (!S.materials.length) return toast("Първо добави материали в Склад"); d.lines.push({id: uid(), prodId: d.id, matId: "", qty: ""}); drawLines(); };
+      drawLines();
+      const save = (asNew) => {
+        refresh();
+        if (!d.name.trim()) return toast("Въведи име");
+        const pid = asNew ? uid() : d.id;
+        const rec = {id: pid, name: asNew ? d.name.trim() + " (копие)" : d.name.trim(), minutes: blank(d.minutes) ? "" : num(d.minutes), price: blank(d.price) ? "" : num(d.price)};
+        const ls = d.lines.filter(l => l.matId && num(l.qty)).map(l => ({id: asNew ? uid() : l.id, prodId: pid, matId: l.matId, qty: num(l.qty)}));
+        if (!asNew && old) S.products[S.products.indexOf(old)] = rec; else S.products.push(rec);
+        S.recipes = S.recipes.filter(r => r.prodId !== pid).concat(ls);
+        closeSheet(); commit(); toast("Запазено");
+      };
+      el.querySelector("#pSave").onclick = () => save(false);
+      if (old) {
+        el.querySelector("#pDup").onclick = () => save(true);
+        el.querySelector("#pDel").onclick = () => {
+          const n1 = S.makes.filter(m => m.prodId === id).length;
+          confirmBox(n1 ? `„${old.name}“ има ${n1} записа в изработката. Те също ще се изтрият.` : `Да изтрия „${old.name}“?`, () => {
+            S.products = S.products.filter(p => p.id !== id); S.recipes = S.recipes.filter(r => r.prodId !== id); S.makes = S.makes.filter(m => m.prodId !== id); commit(); toast("Изтрито");
+          });
+        };
+      }
+    });
+}
+
+function sheetMake(id) {
+  const old = S.makes.find(m => m.id === id);
+  const d = old ? {...old} : {date: today(), prodId: "", qty: 1, realMin: "", price: ""};
+  if (!S.products.length) return toast("Първо добави продукт");
+  openSheet(old ? "Запис" : "Изработено / продадено", `
+    ${fld("Дата", "kDate", d.date, 'type="date"')}
+    <label class="f"><span>Продукт</span><select id="kProd">${prodOpts(d.prodId)}</select></label>
+    <div class="row2">${dec("Брой", "kQty", d.qty)}${dec("Общо реално време (мин, по избор)", "kMin", d.realMin)}</div>
+    ${dec("Продажна цена на бр. (€, по избор)", "kPrice", d.price)}
+    <div id="kCalc"></div>
+    <div class="actions"><button class="btn" id="kSave">Запази</button>${old ? `<button class="btn danger" id="kDel">Изтрий</button>` : ""}</div>`,
+    el => {
+      const prev = () => {
+        const pid = el.querySelector("#kProd").value, pc = C.prods[pid], q = num(el.querySelector("#kQty").value);
+        if (!pc) { el.querySelector("#kCalc").innerHTML = `<div class="note">Избери продукт.</div>`; return; }
+        const rm = el.querySelector("#kMin").value, rp = el.querySelector("#kPrice").value;
+        el.querySelector("#kMin").placeholder = "стандартно: " + qf(q * num(pc.p.minutes)) + " мин";
+        el.querySelector("#kPrice").placeholder = "стандартна: " + (pc.price == null ? "–" : eur(pc.price));
+        const materials = q * pc.materials, mins = blank(rm) ? q * num(pc.p.minutes) : num(rm), labor = mins / 60 * S.settings.rate, overhead = (materials + labor) * S.settings.overhead, cost = materials + labor + overhead;
+        const unit = blank(rp) ? num(pc.p.price) : num(rp), revenue = q * unit, profit = revenue - cost;
+        const miss = [];
+        (C.rec[pid] || []).forEach(r => { const o = C.mats[r.matId]; if (!o) return; const avail = o.stock + (old && old.prodId === pid ? num(old.qty) * num(r.qty) : 0); const need = q * num(r.qty); if (need > avail + 1e-9) miss.push(`${o.m.name}: трябват ${qf(need)}, налични ${qf(Math.max(0, avail))} ${o.m.unit}`); });
+        el.querySelector("#kCalc").innerHTML = `<div class="card"><table class="tbl"><tr><td>Материали</td><td>${eur(materials)}</td></tr><tr><td>Труд (${qf(mins)} мин)</td><td>${eur(labor)}</td></tr><tr><td>Режийни</td><td>${eur(overhead)}</td></tr><tr><td>Себестойност</td><td><b>${eur(cost)}</b></td></tr><tr><td>Приход</td><td>${eur(revenue)}</td></tr><tr class="tot"><td>Печалба</td><td>${eur(profit)} · ${cost ? pct(profit / cost) : "–"}</td></tr></table></div>` +
+          (miss.length ? `<div class="warn"><b>Недостиг в склада:</b><br>${miss.map(esc).join("<br>")}</div>` : "");
+      };
+      el.querySelectorAll("input,select").forEach(i => i.oninput = prev); prev();
+      el.querySelector("#kSave").onclick = () => {
+        const rec = {id: old ? old.id : uid(), date: el.querySelector("#kDate").value || today(), prodId: el.querySelector("#kProd").value, qty: num(el.querySelector("#kQty").value),
+          realMin: blank(el.querySelector("#kMin").value) ? "" : num(el.querySelector("#kMin").value), price: blank(el.querySelector("#kPrice").value) ? "" : num(el.querySelector("#kPrice").value)};
+        if (!rec.prodId) return toast("Избери продукт"); if (!rec.qty) return toast("Въведи брой");
+        if (old) S.makes[S.makes.indexOf(old)] = rec; else S.makes.push(rec);
+        closeSheet(); commit(); toast("Записано. Материалите са изписани.");
+      };
+      if (old) el.querySelector("#kDel").onclick = () => confirmBox("Да изтрия ли записа? Материалите ще се върнат в склада.", () => { S.makes = S.makes.filter(m => m.id !== id); commit(); });
+    });
+}
+
+/* ============ архив ============ */
+const csvCell = v => { const s = String(v == null ? "" : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const toCsv = rows => "﻿" + rows.map(r => r.map(csvCell).join(";")).join("\n");
+async function saveFile(name, text, mime) {
+  if (window.Capacitor) { openSheet(name, `<p class="sm mut">Копирай текста и го запази (например в бележки или го прати по имейл).</p><div class="actions" style="margin:0 0 10px"><button class="btn" id="cpy">Копирай</button></div><textarea id="cpyTxt" readonly>${esc(text)}</textarea>`, el => { el.querySelector("#cpy").onclick = async () => { try { await navigator.clipboard.writeText(text); toast("Копирано"); } catch (e) { el.querySelector("#cpyTxt").select(); toast("Маркирах текста, копирай го"); } }; }); return; }
+  try {
+    const url = URL.createObjectURL(new Blob([text], {type: mime}));
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000); toast("Файлът е свален");
+  } catch (e) {
+    try { await navigator.clipboard.writeText(text); toast("Копирах текста"); }
+    catch (e2) { openSheet(name, `<p class="sm mut">Маркирай и копирай текста.</p><textarea readonly>${esc(text)}</textarea>`); }
+  }
+}
+function wireSettings() {
+  const g = id => $("#" + id);
+  g("s_save").onclick = () => {
+    const st = S.settings;
+    st.rate = num(g("s_rate").value); st.overhead = num(g("s_over").value) / 100; st.minMk = num(g("s_min").value) / 100; st.targetMk = num(g("s_tar").value) / 100;
+    st.highMk = num(g("s_high").value) / 100; st.round = num(g("s_round").value); st.priceMode = g("s_mode").value; st.reorderMult = num(g("s_mult").value) || 1;
+    commit(); toast("Настройките са запазени");
+  };
+  g("b_json").onclick = () => saveFile("arhiv-podaraci-" + today() + ".json", JSON.stringify(S, null, 1), "application/json");
+  g("b_copy").onclick = async () => { try { await navigator.clipboard.writeText(JSON.stringify(S)); toast("Архивът е копиран"); } catch (e) { openSheet("Архив", `<textarea readonly>${esc(JSON.stringify(S))}</textarea>`); } };
+  g("b_csv1").onclick = () => saveFile("sklad-" + today() + ".csv", toCsv([["Материал", "Категория", "Ед.", "Минимум", "Наличност", "Средна цена", "Последна цена", "Статус", "За поръчка", "Стойност"]].concat(Object.values(C.mats).map(o => [o.m.name, o.m.cat, o.m.unit, o.m.min, qf(o.stock), qf(o.avg), qf(o.last), o.status === "out" ? "Свършил" : o.status === "low" ? "Поръчай" : "OK", qf(o.reorder), qf(o.value)]))), "text/csv");
+  g("b_csv2").onclick = () => saveFile("izrabotka-" + today() + ".csv", toCsv([["Дата", "Продукт", "Брой", "Материали", "Труд", "Режийни", "Себестойност", "Приход", "Печалба"]].concat(C.makes.map(m => [fdate(m.mk.date), pname(m.mk.prodId), m.q, qf(m.materials), qf(m.labor), qf(m.overhead), qf(m.cost), qf(m.revenue), qf(m.profit)]))), "text/csv");
+  g("b_imp").onclick = () => openSheet("Върни от архив", `<p class="sm mut">Постави съдържанието на архива (JSON). Текущите данни ще бъдат заменени.</p><textarea id="impTxt" placeholder="{...}"></textarea><div class="actions"><button class="btn" id="impGo">Върни данните</button></div>`, el => {
+    el.querySelector("#impGo").onclick = () => { try { const x = JSON.parse(el.querySelector("#impTxt").value); if (!x || !Array.isArray(x.materials) || !Array.isArray(x.products) || !x.settings) throw 0; S = x; closeSheet(); commit(); toast("Данните са върнати"); } catch (e) { toast("Невалиден архив"); } };
+  });
+  const cl = g("b_clear"), sd = g("b_seed");
+  if (cl) cl.onclick = () => confirmBox("Да изтрия ли всички примерни данни? Настройките остават.", () => { S = emptyState(); commit(); toast("Готово. Започни със Склад → + Материал"); });
+  if (sd) sd.onclick = () => confirmBox("Това замества текущите ти данни с примерни. Сигурен ли си?", () => { S = seed(); commit(); });
+}
+
+/* ============ рендиране и събития ============ */
+function render() {
+  C = calc(S);
+  const views = {dash: vDash, prod: vProd, make: vMake, stock: vStock, more: vMore, buy: vBuy, out: vOut, set: vSet};
+  $("#title").textContent = TITLES[ui.tab];
+  $("#view").innerHTML = views[ui.tab]();
+  const nav = ui.tab === "buy" || ui.tab === "out" || ui.tab === "set" ? "more" : ui.tab;
+  $("#nav").innerHTML = TABS.map(t => `<button data-act="tab" data-v="${t[0]}" class="${t[0] === nav ? "on" : ""}"><span>${t[2]}</span>${t[1]}</button>`).join("");
+  if (ui.tab === "stock") { drawStock(); const q = $("#sq"); q.oninput = () => { ui.q = q.value; drawStock(); }; }
+  if (ui.tab === "set") wireSettings();
+}
+const ACTS = {
+  tab: el => { ui.tab = el.dataset.v; closeSheet(); render(); window.scrollTo(0, 0); },
+  period: el => { ui.period = el.dataset.v; render(); },
+  sfilter: el => { ui.sfilter = el.dataset.v; render(); },
+  close: () => closeSheet(),
+  goBuy: () => ACTS.tab({dataset: {v: "buy"}}), goOut: () => ACTS.tab({dataset: {v: "out"}}), goSet: () => ACTS.tab({dataset: {v: "set"}}),
+  newProd: () => sheetProd(null), editProd: el => sheetProd(el.dataset.id),
+  newMat: () => sheetMat(null), editMat: el => sheetMat(el.dataset.id),
+  newBuy: () => sheetBuy(null), editBuy: el => sheetBuy(el.dataset.id),
+  newOut: () => sheetOut(null), editOut: el => sheetOut(el.dataset.id),
+  newMake: () => sheetMake(null), editMake: el => sheetMake(el.dataset.id)
+};
+document.addEventListener("click", e => {
+  if (e.target.id === "sheetbg") return closeSheet();
+  const el = e.target.closest("[data-act]");
+  if (el && ACTS[el.dataset.act]) ACTS[el.dataset.act](el);
+});
+render();
+setSaveText("");
+initStore();
+</script>
+</body>
+</html>
